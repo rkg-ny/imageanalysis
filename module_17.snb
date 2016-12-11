@@ -1,0 +1,1374 @@
+{
+  "metadata" : {
+    "name" : "LFW images",
+    "user_save_timestamp" : "1969-12-31T19:00:00.000Z",
+    "auto_save_timestamp" : "1969-12-31T19:00:00.000Z",
+    "language_info" : {
+      "name" : "scala",
+      "file_extension" : "scala",
+      "codemirror_mode" : "text/x-scala"
+    },
+    "trusted" : true,
+    "customLocalRepo" : null,
+    "customRepos" : null,
+    "customDeps" : null,
+    "customImports" : null,
+    "customArgs" : null,
+    "customSparkConf" : null
+  },
+  "cells" : [ {
+    "metadata" : {
+      "id" : "D6106722B2F14AC8815067D4C0E790D6"
+    },
+    "cell_type" : "markdown",
+    "source" : "#  Showing how to read a set of images"
+  }, {
+    "metadata" : {
+      "id" : "FBD8099B64604EB88176EAC2F59847A7"
+    },
+    "cell_type" : "markdown",
+    "source" : "This example reads an image collection from\n               http://vis-www.cs.umass.edu/lfw/\nknown as the labeled faces in the wild [LFW]."
+  }, {
+    "metadata" : {
+      "id" : "3AC9A251FA8C4580A082E190CC82AA61"
+    },
+    "cell_type" : "markdown",
+    "source" : "Actually, on my laptop, I can only use the smaller collection\n      http://vis-www.cs.umass.edu/lfw/lfw-a.tgz\nof images of people whose names begin with the letter A"
+  }, {
+    "metadata" : {
+      "id" : "AB998954DD9F4F3FBEC14460FFFA94BD"
+    },
+    "cell_type" : "markdown",
+    "source" : "This is not intended to be a course on image processing.\nScala is better for the following, as opposed to pyspark Python."
+  }, {
+    "metadata" : {
+      "id" : "46736C483A914C43B47B4E0FCE67CD5B"
+    },
+    "cell_type" : "markdown",
+    "source" : "The following dependency is only for purposes of displaying an image."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "presentation" : {
+        "tabs_state" : "{\n  \"tab_id\": \"#tab482100999-0\"\n}",
+        "pivot_chart_state" : "{\n  \"hiddenAttributes\": [],\n  \"menuLimit\": 200,\n  \"cols\": [],\n  \"rows\": [],\n  \"vals\": [],\n  \"exclusions\": {},\n  \"inclusions\": {},\n  \"unusedAttrsVertical\": 85,\n  \"autoSortUnusedAttrs\": false,\n  \"inclusionsInfo\": {},\n  \"aggregatorName\": \"Count\",\n  \"rendererName\": \"Table\"\n}"
+      },
+      "id" : "57E11166A3BB4CF7A870BAF2F92B09B9"
+    },
+    "cell_type" : "code",
+    "source" : ":dp  org.scala-lang %  scala-swing  %   2.10.4",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "globalScope.jars: Array[String] = [Ljava.lang.String;@292b3f80\r\nres2: List[String] = List(C:\\Users\\rohit\\AppData\\Local\\Temp\\spark-notebook\\aether\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\org\\scala-lang\\scala-swing\\2.10.4\\scala-swing-2.10.4.jar, C:\\Users\\rohit\\AppData\\Local\\Temp\\spark-notebook\\aether\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\org\\scala-lang\\scala-library\\2.10.4\\scala-library-2.10.4.jar)\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "<div>\n      <script data-this=\"{&quot;dataId&quot;:&quot;anon9f454db21468a681124dcb2d853cfe47&quot;,&quot;dataInit&quot;:[{&quot;string value&quot;:&quot;C:\\\\Users\\\\rohit\\\\AppData\\\\Local\\\\Temp\\\\spark-notebook\\\\aether\\\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\\\org\\\\scala-lang\\\\scala-swing\\\\2.10.4\\\\scala-swing-2.10.4.jar&quot;},{&quot;string value&quot;:&quot;C:\\\\Users\\\\rohit\\\\AppData\\\\Local\\\\Temp\\\\spark-notebook\\\\aether\\\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\\\org\\\\scala-lang\\\\scala-library\\\\2.10.4\\\\scala-library-2.10.4.jar&quot;}],&quot;genId&quot;:&quot;482100999&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/playground','../javascripts/notebook/magic/tabs'], \n      function(playground, _magictabs) {\n        // data ==> data-this (in observable.js's scopedEval) ==> this in JS => { dataId, dataInit, ... }\n        // this ==> scope (in observable.js's scopedEval) ==> this.parentElement ==> div.container below (toHtml)\n\n        playground.call(data,\n                        this\n                        ,\n                        {\n    \"f\": _magictabs,\n    \"o\": {}\n  }\n  \n                        \n                        \n                      );\n      }\n    );/*]]>*/</script>\n    <div>\n        <div>\n          <ul class=\"nav nav-tabs\" id=\"ul482100999\"><li>\n                <a href=\"#tab482100999-0\"><i class=\"fa fa-table\"/></a>\n              </li><li>\n                <a href=\"#tab482100999-1\"><i class=\"fa fa-cubes\"/></a>\n              </li></ul>\n\n          <div class=\"tab-content\" id=\"tab482100999\"><div class=\"tab-pane\" id=\"tab482100999-0\">\n              <div>\n      <script data-this=\"{&quot;dataId&quot;:&quot;anonebe2c6bd3824d20366dbd99eb8f9dbd1&quot;,&quot;dataInit&quot;:[{&quot;string value&quot;:&quot;C:\\\\Users\\\\rohit\\\\AppData\\\\Local\\\\Temp\\\\spark-notebook\\\\aether\\\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\\\org\\\\scala-lang\\\\scala-swing\\\\2.10.4\\\\scala-swing-2.10.4.jar&quot;},{&quot;string value&quot;:&quot;C:\\\\Users\\\\rohit\\\\AppData\\\\Local\\\\Temp\\\\spark-notebook\\\\aether\\\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\\\org\\\\scala-lang\\\\scala-library\\\\2.10.4\\\\scala-library-2.10.4.jar&quot;}],&quot;genId&quot;:&quot;455923689&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/playground','../javascripts/notebook/magic/tableChart'], \n      function(playground, _magictableChart) {\n        // data ==> data-this (in observable.js's scopedEval) ==> this in JS => { dataId, dataInit, ... }\n        // this ==> scope (in observable.js's scopedEval) ==> this.parentElement ==> div.container below (toHtml)\n\n        playground.call(data,\n                        this\n                        ,\n                        {\n    \"f\": _magictableChart,\n    \"o\": {\"headers\":[\"string value\"],\"width\":600,\"height\":400}\n  }\n  \n                        \n                        \n                      );\n      }\n    );/*]]>*/</script>\n    <div>\n        <p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anon17eeeec931e9ae635dec86ef782cf970&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p> <span style=\"color:red\"><p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anon42223382a446fb2c967ae76f9c276165&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p></span>\n        <div>\n        </div>\n      </div></div>\n              </div><div class=\"tab-pane\" id=\"tab482100999-1\">\n              <div>\n      <script data-this=\"{&quot;dataId&quot;:&quot;anon805253b4c2e48ed1744ace175549657e&quot;,&quot;dataInit&quot;:[{&quot;string value&quot;:&quot;C:\\\\Users\\\\rohit\\\\AppData\\\\Local\\\\Temp\\\\spark-notebook\\\\aether\\\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\\\org\\\\scala-lang\\\\scala-swing\\\\2.10.4\\\\scala-swing-2.10.4.jar&quot;},{&quot;string value&quot;:&quot;C:\\\\Users\\\\rohit\\\\AppData\\\\Local\\\\Temp\\\\spark-notebook\\\\aether\\\\cc01ed1a-8227-4ef3-869b-50b4f20977e5\\\\org\\\\scala-lang\\\\scala-library\\\\2.10.4\\\\scala-library-2.10.4.jar&quot;}],&quot;genId&quot;:&quot;1719366773&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/playground','../javascripts/notebook/magic/pivotChart'], \n      function(playground, _magicpivotChart) {\n        // data ==> data-this (in observable.js's scopedEval) ==> this in JS => { dataId, dataInit, ... }\n        // this ==> scope (in observable.js's scopedEval) ==> this.parentElement ==> div.container below (toHtml)\n\n        playground.call(data,\n                        this\n                        ,\n                        {\n    \"f\": _magicpivotChart,\n    \"o\": {\"width\":600,\"height\":400,\"derivedAttributes\":{},\"extraOptions\":{}}\n  }\n  \n                        \n                        \n                      );\n      }\n    );/*]]>*/</script>\n    <div>\n        <p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anonc89b4f23a3b5d91bb833505f0093d419&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p> <span style=\"color:red\"><p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anon748548b08e71449f499cae7a4432247f&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p></span>\n        <div>\n        </div>\n      </div></div>\n              </div></div>\n        </div>\n      </div></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 1
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "E38D9C57EBC8443DB8B539ECE4C9E5A7"
+    },
+    "cell_type" : "markdown",
+    "source" : "This is where the images are. Each person's images are under a separate directory."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "05DC0268A66B4C618524C2F1C0B11A03"
+    },
+    "cell_type" : "code",
+    "source" : "val path = \"E:\\\\bigdata\\\\module_17_b_lfw_images\\\\lfw\\\\Aaron_Eckhart\\\\*\"",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "path: String = E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\*\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 2
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "F766852C39FE409D931F3049F9439900"
+    },
+    "cell_type" : "markdown",
+    "source" : "Below I use  wholeTextFiles().\nI think binaryFiles() is also a possibility. (using  path=\"e:\\\\temp\\\\lfw\\\\*\\\\*\").\nThis second way may or may not require additional processing of the file contents."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "65F6FF72B62247C98EB405433F9894E9"
+    },
+    "cell_type" : "code",
+    "source" : "val rdd = sc.wholeTextFiles(path)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "rdd: org.apache.spark.rdd.RDD[(String, String)] = MapPartitionsRDD[1] at wholeTextFiles at <console>:55\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 3
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "206894E0FA5E4F028172E05F6F5B603A"
+    },
+    "cell_type" : "markdown",
+    "source" : "Just a sanity check."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "DA8944CA90BF4C3F82E926A61EBFD96D"
+    },
+    "cell_type" : "code",
+    "source" : "rdd.count",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "res6: Long = 2\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "2"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 4
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "A0BE64E1A822444A8E3EFF8E3EB4E526"
+    },
+    "cell_type" : "raw",
+    "source" : "May also try the following for check."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "81B0B6E0D9324EA1869F96FA01FD5FE7"
+    },
+    "cell_type" : "code",
+    "source" : "\nval first = rdd.first\nprintln(first)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "(file:/E:/bigdata/module_17_b_lfw_images/lfw/Aaron_Eckhart/Aaron_Eckhart_0001.jpg,????\u0000\u0010JFIF\u0000\u0001\u0001\u0000\u0000\u0001\u0000\u0001\u0000\u0000??\u0000C\u0000\u0003\u0002\u0002\u0003\u0002\u0002\u0003\u0003\u0003\u0003\u0004\u0003\u0003\u0004\u0005\b\u0005\u0005\u0004\u0004\u0005\n\u0007\u0007\u0006\b\f\n\f\f\u000B\n\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014\u0014??\u0000\u0011\b\u0000?\u0000?\u0003\u0001\"\u0000\u0002\u0011\u0001\u0003\u0011\u0001??\u0000\u001F\u0000\u0000\u0001\u0005\u0001\u0001\u0001\u0001\u0001\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000B??\u0000?\u0010\u0000\u0002\u0001\u0003\u0003\u0002\u0004\u0003\u0005\u0005\u0004\u0004\u0000\u0000\u0001}\u0001\u0002\u0003\u0000\u0004\u0011\u0005\u0012!1A\u0006\u0013Qa\u0007\"q\u00142???\b#B??\u0015R??$3br?\t\n\u0016\u0017\u0018\u0019\u001A%&'()*456789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz???????????????????????????????????????????????????????????????????????????\u0000\u001F\u0001\u0000\u0003\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000B??\u0000?\u0011\u0000\u0002\u0001\u0002\u0004\u0004\u0003\u0004\u0007\u0005\u0004\u0004\u0000\u0001\u0002w\u0000\u0001\u0002\u0003\u0011\u0004\u0005!1\u0006\u0012AQ\u0007aq\u0013\"2?\b\u0014B????\t#3R?\u0015br?\nnr??Ii??\n???? ??g7?TU?\u000F?n.\u0002K\"?\u001ErEt?\"?? \u001EOU??R??\u0001\u0011\"?$TvzlC/\u0014FC?????>U9??SKR????????J{\u001Ekd??F0UT\u0017?V?\u001A9\u0014?!\u0018?Y?\u0012? ???Ys\u001A?y???\u0001??QYs?[ B???We?\u0000\b?\u0016?,?\u0004?\u0011?F??wM??f+o\u0018????jA+X?MT???G???NK?\n?m>??^???X?j?J??rv?Ê?\u0019?????8\u0007?^?]?\u000E?\u0013??&?6??L?\f?\u0018?+^c#N(??\u0002?????c$??\u0014C4?N1?5?e3G?r\u0007\"?H9NBT??\u0015W85?_Y??\\`\u001F??D??=+t?&?F9?K?F\t?1F?TH?A??O?J?@\u0011?\u00141?K????^?@\u000E)r*V????_?.`\u001AxJ??????z?`\u0000g4??w?`?0?5H\u0005\u001CQE\u0014?)ri(c???\u0003?ZO?tn+??\u000Bi\u001D??G?t??O??:???v??\u0010s^??r!|F?c\u001E+???M????\u0003?J?\u0010\b?U?Zid\u0016<?\t\u001A?#\u00158?6?????Vc<????\u001E???]\"???c?L??T\u0013?/?z?????i???N??*??F????S???\u0007?R??\\??9{?&??r?}\u0001\u0018?\u0017z`??+;'??]??B'?g????\"?????cY?0??z?????K???[???L}\u0014???$\u001BW?z???4E\u0013L\u0011\u000FP????Z\b?y<{w?a$??$?8{?iXd`?WdM?????? ?`??R.??*\u0015$?J??4i???v%§?????\u0016?\u0011?D?4>??ml$???\u0003\n???B?Q1????\u0000\b?r?W??E?*\u000E??t?jO\t??2?cn??\u00134??B-jY?Q??u?qX??[?:tn?\u0010\u00168???\u001C?<?????\t??[\u0015?\u0016??j??(??e\u001C?:?R?*??xz\u000E?<CL???*????~\u0017[p??;???\u001E\u0004??\u0010?x??o??\u0000\u0003??I\u0016]A???X?w??2???g??RC\u0015?J?t\u0000qS[x\u0003Y?q ?p??Gj?\"????b\u0017\u0012??Z??d??e????\u0015??0xX\\???????g\u0007??\u0015?k?\u000F???B??M}???RwWLn\u001F???\u000F?? ­??r(?&?\u001E\u000E-h|??\u0018?a?\"#?@?????O?+?\u001DO????`1\u0018?\\?J[?q???l?`?Y?Z??????\u0018\u0001?*?mV/??\u001D:v????Qhe?P(?vk?=2Cx?\u0002\u0014g??#????v\u0005???}k??5?.&_?k??\u001BF?\u00199\u00062Fk??J?hB?\u0001]?z?L?G\u001D?;\u000E?:+?G?\u001C??1?\u001B$?qJNEP\t??^izP\u0002?\n\u001E??G\u0013e??f#??m?T?bGd?%??r\b4t???a;?7\u0003[?v?\u001A??\u000E?\u0019 ??????a??\"{???9/u??\b\t?????6\u0011?\u001A??????\u0000??O&?{|?!?+??\u0015?w???????v>??Q??X???P??\u001B[?/\u001F?\nAl\fl??SZ?C\f?????U????k??\u0006?Iej#($??????\u000E?h[?jN=y?r}\u0002?p??~?46GS3P?cdc\u0014??3Y??%??}??[s?\u00141[?\u0000??9?i?@?\f???5???:\u001E{?\t???t\u0003\u001D??n?IVGB1?k??\u001C???6]?\\??s<-??5?\u0004???_F?0??6\u0013???>??M?\u0003$?W?j6?\u0014?\n?f???0pA5?a??<\\e?8_\u0014J-?p\u0001??W\"?mF?\"??\u0010?Oz??\\N?\u0014???\u0015??W>f??)? }h+?\n(|??\u0007Q?h\u0014?????\u0007????/\u001E\u001C??`?(?\u001B??7??~?x??>??\u0006?.-?I\u0007??P:????u???;????U?O?5???k?\u001B??:??2????i\u0002?:?????eH???.?61?+aQ@\u0015?\u0010?,\n?Az?o\u0002??\u0018w?P?&2?\n??_<?3??w?\u0015?\u001A?????H>??o\u0013h??j??E.yeQ?w???\u0012???SEm\u0014\u0012?t??????9\u0015??-??4?[HM?D??az?_\n??I?\u001D?????:???\u0007??di4?\t?Fk9.sJq?g??\u001B-F??B\u001C?2A\u0015??>\u0004?/\u001AH????1?]\u0007????d? 1\u0015??i??\u0002????5c??57??_?\f?e?K??????:???\u0004??????U??'i?r}&?3???.?m\u001CfEZ?m??XxC[\u001E0?L?F??\u001Crq_???9n?U2D7n\u0018??|v?\u001D??q?.q^\u001F}eifn5?c?$q?\u0004???5?Bz?y??^??\u0004?Q??$N\u0006R?????]\u000B????<?K~?X??Gc?\u001E?\u0006?H?+\f?U\u0019?)QT\u0003W?%\u0000b?\u000Ei\\\u0007\u000E???OZZ)\u0000?#?ZZB??e \u001C??T?x??\u001E]@?g?\u0000\u0018??b?}h\u0003\u0014?H\u0004??Fs??J??u<?2????\u0002[y<?\u0004?C_C~?_\u001Au?\u000B?\u0010xf?q&?x?\\????\u0013_:\u0017?\u0007a]?­@?x?F??\u0001p?'?\"?q4??mFN?D?S?[???H??\u0019?z??81?\u0000ds^Q?\u0016V??\u001C?A?'M?Td^???U_$?}?9?)\u001D???o\f:TWw!?w?/Z???E??8?Y????l??9?\\\u001Bf?^????FP1????E=??rI??x4??????\u0013.?\u0001?\u0019??\u0019?[&?p?\u001Bz?Zl??\u0017?7Z?R3?Y???|\u001B9??Y?\u0004W??v??^m?@\\?5?x(+[??\u0017\u0015SWD=Y?]?/?\n8S?7\nB??E\u001CzP\u0003\u0007?5\u0011?J\u001C?4?sV\u0000N)7?Y?qH0N3?.?\f??u? L6??????M???-???A\u001Cd?r?4V?)???]??\u001C??_\u0000??*??\b??\u0000`????q???^\u000B??|/?K8???\u001BR?\u001C??'?9\u0010?>'??Ï\u0011x?eM3N?PN\u0003m??_@?2??.R???W?e?n?!?????_V??\u001E??B??]?V??a?k???!\u0017?t????D??O?t?6?)38??\"??1em\u0015?xU\t????????d?G?y??3Ap\u001B'nI\u0007?]??td???~y????????j)3??S2?$???V}????\u0005??V>??\u0014???????3???<?mR&??xZN9C??SM??J?[?^;??\u0018\u0001rpk???9?f??=?ddWi{??\ngO\u0012??X??M?? ??\u0018l{\n?e?\u0000\n?\"8d?\u0006?|\u0006L????^?b?r?\nG\n??\u0014c\u0015?N??3s??\u001E\u0007??<3????/&?dg?^?\u0010x_@?u??\fEG???5??a\u0015?h?6?;k\n???E ?c?v??:p???\u001E?o?i?0\u0019!rj?????0\u001Cv?S?????S!\u001B^%?u?????r??5?+Th?\n??\u0000??\u001B??b&<?k????#?\u00047?,\u0016??)b>_J???\u001F1?/?~\u001C???\u0012\u0013wf?/??\\??\u000BpF\u000F9??[?\nC??Y?IQ?0?=?g??k.?\u0018?<?r?\u0007\u0002??w>@^\u0006h?\u0018?z???\u0000g?s???\u0006?\u0001?\u0007j?+?>?O??r?nGgR*\\Z\u000B??\n?i?4??q??N?b??????'þ\f\u000Bu????\f???S??M??=>?;;H\u00128???t???Yi4??C\t\u0017????????H?B??\"??t?\u000E\u0019L??4??U\u0018r;?Mb[i?G|??G\u001ErI\u001C?u??k?so\u001E?\f?p\u0005k??;?6\b??TD%yY?fy\u001E?N?Tu?^}y???2e?a??^??IU?I?2!$\u001EEx??'???\u001B'x???[B71???\u001E??+\u0004\u001ALr???0?SY-gx??\u0016\nr??j??b{\u0004?\f????f^\\:\u0019|?\u0003\u001F??\u0014?q?w??&???Gp\u001D??\u0000?????\u0006????}J\u0005?)???\\?????Ag\u001A?\u00006r?\u001E????\u000B^x\u001FP??\t ~\u0015?R?2w.\u000F??xo?O\u0016?S??y\u0001??b?=?O?^?a??\u0003?\u0019\u001C??\u0003?4?\u000B??}h?\u0015?? =\b?5?F???\nx????Kq+?\u00003\u0013?{?$??j???o??5\u0015|\f?^y?\u000F??B?*?\f\n??\"\u0006?\f?\u001E??????;y??PN\u0010\u0015z?\u0001?~\u0014?\u000E?t??g?\u0001?M?.????\u001C9?8?&?<:??\u0015??s????\u000E?g?(?C\u0005??;\u000Bgs?????+???\n???\u00177Px???]?????g?/;Ki??z?\t?{W?X?\u001B?\u001A]?\u0002?\u0003\"?;2^?????3??4????/??c??mqm\u0015I\f@;k???K`I?1\u0019?+?l?k?m?u\u001B?B?=?=*$??'?E\u0005??q,Y?Al????\u0000?z\u0003?v?+?¡?m???\u0001?`?}*???\u000Bw]??sY??+\u001Au?9?3?z?Þ&??4!????:\u000EMz7?O\u001C\u000B?+y????3]???\u0004?/.$e_.pX\u0002??\u0015??]xGUk\u0019?D????N??8?72>?\u0001?P?????\u0012C<j\\?g??\u001D??????z?\u001F\u000B??;?T??t?'?z6??dtM?T??|?z2???S?\n?S?6?d5??^s?\u0002[k\u0018?+\u0019Y;f?Iu-?\u0016?EC??_\u0019\u0016?%w????5?8?\nQ????K?!F???b]>;[6?L,?E[??\u001AR@??\\??O\u0013??\u0002??\u0000?'b??k?)N??4?0?.[W?\u0015??\u0003t~`2}+?M2xQY??k?\u0000zW??3??????i???>????/??x.d???_\\\u000F????xz^??b??J???\u0010?C6??,Y$d\u001CW?-??\u000F\u001C????X?\u001F?\u0016/?|?V??\u001EpLc \n???\u000B?R?&?-?!???KG??Kc\u0012???)4j8????0?\u0013 ^r+?F?\u0013?\\?\u0000\u0000?\u0002??\u000B?RI=????b?KC?GM??\t\u0011#?X?[?????\u0000?5????\u0001?\u0017 b??\u0001???I?\u0003???c????[?\u00008?\u001D\u0017?????S?l????=???W??\n\u0002?\u000E\u0005z\u0004o$q)+?#?i\u0018?I?}?\u0018??_8?\u001E??{l]Y?Lz\n?5?U fS???W\u001An?????pz???R?????l?N1Ryv???5\u0019c??#\u00006z?k#\u0012?\u001C}(?\u0003????d?|\u00102Cq]5???V\u0012?$1?\\\u001F???$?i\f?]>??)???+??\u0019?tzRkV??i3??\u001FT??Ú??\u0002?1?+??n?nn\u0019A?O\u0002?|}?,?s\u0012?1\u001Dj??=Q??j\u0006?M?G?GC?\u001FJ?]\u001A??x??0I>g??A?\u000F??\u001D?W?@??M<?|?'??????7?Z??h9?\u0013????\\?`?H???\u0002x????&???\u0003?L>v??w?#?z???^\u001D??]\"??z\u0018W<??\\????v?k??B2In@?,?*C?|???2?s!???\u0001?-o??.w\\??\n???y?*?=??q???\u000F?|e?âZ?ne?J??q???\u001F\u0013?\u0002?s??\t??Cr\u0003?+?\u0015???\u0000\f??Y\u0014$y[?\t?*?y?K];?z?\n\u0016>\u0012?.[???)T????P???7?\t -\u00018?#?S?\u0015????xc\u0000\u0002?w'???O?vZ?:??\u001B\\6K?\u0018????T??F?%??8t8???/\u0011Ioc???oD??N???,S\u0012=3V?5\u001B?C\u001E{\u0012????}4??\u000B??\u0015?}?5??^T????P???\u0019:???4?e\u0003?&?\u001F\u0001?\"?~-{???\u000Bc???ds[?/??S??M????o\u0015{??7?o\u000E??\u001D??\u001B?P\u001B?O????QnW??f\u0018?e\u0014t^3????}\u001E??Dr???\"\u000E\u0017??v??????\u0010M=?t?K`?????5\u0011\u001B?ws???O?\u000B??\u0016\u0010^?n?\u001B+?T??>k????]/?rI?5?|??????O\u000E??>?O??)2?Zo???Q?v\f?8????-????\u0004Yl`?[{\u0014?R??????????MzG?t?M?u_?O^+???v???t?O?\\d?\u0016?9l?[?1??-?N?\u0011]?c?Mw\u001D\u0018q\\?@!?\u001A???[\u0012\u0001??Du\u0005&?>?????9'?wvq\u0017?V??k\u0006???\u00188?kb?????9?+t?+??????\u001A%?H b??5`#F????nu_?\u00101???\u001E??E\fqY\u000F?$t?\u000B??\u001A?\u0010\u000F\u0004?@\u0007??]2\u0010?q?\u000B4??i\u001B\u0004??5(?-?\u0000v?qH._???\u0016?\u0018?Tv\u0015?h????l?\u0010??w?\u001A??m2??0=???4i????3??????fAg??\u000B-PFr?\u001C?^?????\u00072 p\u0007q^Uo??7????k?t+ëiS\u0007a??Ij\u0017?y^?\u000F?\\E?g?y???.??\f?W?x?\u001F\"\u0019?\u001Dy??X \u001A??????+=?t?\u001C?T\u00020\b?w?Y?X?3??]\u000F??-\u001A?y\u0019?7?M?SZ?\u0001??Wm\u0002?xOL??-???%??}?\u0018d)?\u0015??^\u001CY?\u0015?\u0006\n???h?b-f\\?????h?\u000F???\u001E??xOKk?Vi\nd\u0016<~5???_??G??pF\u0007n+G\u001B?\b?g?@??\u0010\\?=I?zG?\u0011N? ^???\fZ?x?4\u001EX?^??-5f?d?u???}?S???3p??;x?]?6iQm\u0001???s\u001A?\n?\u000B {\u0005?YE\u0017fS[P/\"c?#?.?9??g8P???b??\u0000?\u0014???1????\u0006g??wr?\f@S??I????????w=?\u001F?vW5?W0)M?\u0001?\u001E???\n!?I?`?\u000EY2?}+???9?\b*????F?<Zu???-#\f???k?_[?;\u000F/<???]}??e??????T\u0012?9?I=?????o??+\"\u001F-??[Z???i???8\n??*???x?\u001Am6G?????\u0006F{?hx??\u0016O?m-?\u000F1??W?J?rEz??G?\u0000?GJ??T\u0002\b\u0000\u001D?k?|\u001E3j?AS\u001D?[????f?MY?@[B???k/Wbd???V???? \u001F???6Z\u0019??WV?\t??\\??e:F?,\u0017e?lp??O??\u001D?+??@\u0017??0wu??;?|K????/??F7???x\u001E???~6??_4^`RR??W9?\u0000\u0011_Ix?????`m?A??<H\u0002h?XQ?5?d\u000E3?k?\u0013??\t??U?}{[G?7?t????Y??(??zacN\u0005y??\u0000??/??K??????@?YR?J??7&Z??\u0013Q??'?\u0001???R?}?E?-?n???\f?\u0002\u0001\u0019??\u0019?\"?N3??&/R?\u0000?m???%s?z%?Gx???\u0015\u00199?O?\u0000\u000Bx?\u0005t??\u0000??kD?LO)?m\u0005??Ï?I?I?B???=?W????C???8\u0001\u0007N??3?Ff???\u001D\u0018???\u0015??z?*ln??cQ?\u0000????<6???'??'S??g?\u0000\n?c?\u0003?V?!?{?\b?\\?:?}K? 8?W??pv\u001AR??\u001B?\u0019?%?=?>\u001B?h?g??*??\u0018R\u001B4U??L???\u001F??\u001F?+?$w??\u0011|?\u001C|???v8?Ze?S??\u000E?\u0002U??.?\u0015????J???/???7?:?^?\n/??(???5??\u000F????)\nfirst: (String, String) =\n(file:/E:/bigdata/module_17_b_lfw_images/lfw/Aaron_Eckhart/Aaron_Eckhart_0001.jpg,??????JFIF?????????????C??????????????????????\n????\n\n\n\n\n???  ?????????\n?????????????????????????????????????????????????????????????\"?????????? ??????????????????????????\n ????????????????????}????????!1A??Qa?\"q?2????#B???R??$3br?\n?????%&'()*456789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz???????????????????????????????????????????????????????????????????????????? ??????????????????????????\n ????????????????????w???????!1??AQ?aq?\"2???B???? #3R??br?\n?$4?%?????&'()*56789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz???????????????????????????????????????????????????????????????????????????\n?????????????/???_zy?????%}??W?E?'???&??/|?8|?????R`0Z?<??(=MM?????..."
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 5
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "56BA310AB789491D80422B4E6EA83E18"
+    },
+    "cell_type" : "markdown",
+    "source" : "The following removes that \"file:\"  in the first component of the above rdd (a PairRDD)\nand produces an RDD of just the file pathnames."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "2834AECDEAA440E1A2F134692C5274CE"
+    },
+    "cell_type" : "code",
+    "source" : "val files  =   rdd.map{  case (filename,contents) =>  filename.replace(\"file:\", \"\") }",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "files: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[2] at map at <console>:57\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 6
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "334E9BC2F5664FE28AA487252C19C5F1"
+    },
+    "cell_type" : "markdown",
+    "source" : "The following is to make sure that Windows file path names are used   (\\ instead of /)."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "626589D613DC46F4B0F7672F415B65AF"
+    },
+    "cell_type" : "code",
+    "source" : "val winFiles =  files.map( f => f.replace(\"/\", \"\\\\\").replace(\"\\\\E:\", \"E:\") )",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "winFiles: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[3] at map at <console>:59\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 7
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "presentation" : {
+        "tabs_state" : "{\n  \"tab_id\": \"#tab368114281-0\"\n}",
+        "pivot_chart_state" : "{\n  \"hiddenAttributes\": [],\n  \"menuLimit\": 200,\n  \"cols\": [],\n  \"rows\": [],\n  \"vals\": [],\n  \"exclusions\": {},\n  \"inclusions\": {},\n  \"unusedAttrsVertical\": 85,\n  \"autoSortUnusedAttrs\": false,\n  \"inclusionsInfo\": {},\n  \"aggregatorName\": \"Count\",\n  \"rendererName\": \"Table\"\n}"
+      },
+      "id" : "2A5B136049E54F388E287415BB2CC933"
+    },
+    "cell_type" : "code",
+    "source" : "winFiles.collect",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "res12: Array[String] = Array(E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\Aaron_Eckhart_0001.jpg, E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\Aaron_Guiel_0001.jpg)\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "<div>\n      <script data-this=\"{&quot;dataId&quot;:&quot;anonda5d1c5a73b3b571a504881342613da3&quot;,&quot;dataInit&quot;:[{&quot;string value&quot;:&quot;E:\\\\bigdata\\\\module_17_b_lfw_images\\\\lfw\\\\Aaron_Eckhart\\\\Aaron_Eckhart_0001.jpg&quot;},{&quot;string value&quot;:&quot;E:\\\\bigdata\\\\module_17_b_lfw_images\\\\lfw\\\\Aaron_Eckhart\\\\Aaron_Guiel_0001.jpg&quot;}],&quot;genId&quot;:&quot;368114281&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/playground','../javascripts/notebook/magic/tabs'], \n      function(playground, _magictabs) {\n        // data ==> data-this (in observable.js's scopedEval) ==> this in JS => { dataId, dataInit, ... }\n        // this ==> scope (in observable.js's scopedEval) ==> this.parentElement ==> div.container below (toHtml)\n\n        playground.call(data,\n                        this\n                        ,\n                        {\n    \"f\": _magictabs,\n    \"o\": {}\n  }\n  \n                        \n                        \n                      );\n      }\n    );/*]]>*/</script>\n    <div>\n        <div>\n          <ul class=\"nav nav-tabs\" id=\"ul368114281\"><li>\n                <a href=\"#tab368114281-0\"><i class=\"fa fa-table\"/></a>\n              </li><li>\n                <a href=\"#tab368114281-1\"><i class=\"fa fa-cubes\"/></a>\n              </li></ul>\n\n          <div class=\"tab-content\" id=\"tab368114281\"><div class=\"tab-pane\" id=\"tab368114281-0\">\n              <div>\n      <script data-this=\"{&quot;dataId&quot;:&quot;anon31e5aca9b4d26b45d194915f6d6fa647&quot;,&quot;dataInit&quot;:[{&quot;string value&quot;:&quot;E:\\\\bigdata\\\\module_17_b_lfw_images\\\\lfw\\\\Aaron_Eckhart\\\\Aaron_Eckhart_0001.jpg&quot;},{&quot;string value&quot;:&quot;E:\\\\bigdata\\\\module_17_b_lfw_images\\\\lfw\\\\Aaron_Eckhart\\\\Aaron_Guiel_0001.jpg&quot;}],&quot;genId&quot;:&quot;1460423358&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/playground','../javascripts/notebook/magic/tableChart'], \n      function(playground, _magictableChart) {\n        // data ==> data-this (in observable.js's scopedEval) ==> this in JS => { dataId, dataInit, ... }\n        // this ==> scope (in observable.js's scopedEval) ==> this.parentElement ==> div.container below (toHtml)\n\n        playground.call(data,\n                        this\n                        ,\n                        {\n    \"f\": _magictableChart,\n    \"o\": {\"headers\":[\"string value\"],\"width\":600,\"height\":400}\n  }\n  \n                        \n                        \n                      );\n      }\n    );/*]]>*/</script>\n    <div>\n        <p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anoncb4a4df840328875a8abffd995944c86&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p> <span style=\"color:red\"><p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anonf4d2ecb988f933772b3279f56575ce43&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p></span>\n        <div>\n        </div>\n      </div></div>\n              </div><div class=\"tab-pane\" id=\"tab368114281-1\">\n              <div>\n      <script data-this=\"{&quot;dataId&quot;:&quot;anon84e72d32e9734693d1d2db7c20bfd99b&quot;,&quot;dataInit&quot;:[{&quot;string value&quot;:&quot;E:\\\\bigdata\\\\module_17_b_lfw_images\\\\lfw\\\\Aaron_Eckhart\\\\Aaron_Eckhart_0001.jpg&quot;},{&quot;string value&quot;:&quot;E:\\\\bigdata\\\\module_17_b_lfw_images\\\\lfw\\\\Aaron_Eckhart\\\\Aaron_Guiel_0001.jpg&quot;}],&quot;genId&quot;:&quot;1359483257&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/req(['../javascripts/notebook/playground','../javascripts/notebook/magic/pivotChart'], \n      function(playground, _magicpivotChart) {\n        // data ==> data-this (in observable.js's scopedEval) ==> this in JS => { dataId, dataInit, ... }\n        // this ==> scope (in observable.js's scopedEval) ==> this.parentElement ==> div.container below (toHtml)\n\n        playground.call(data,\n                        this\n                        ,\n                        {\n    \"f\": _magicpivotChart,\n    \"o\": {\"width\":600,\"height\":400,\"derivedAttributes\":{},\"extraOptions\":{}}\n  }\n  \n                        \n                        \n                      );\n      }\n    );/*]]>*/</script>\n    <div>\n        <p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anonf50ee4e819d2d3861f27a4c0ef5d547f&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p> <span style=\"color:red\"><p data-bind=\"text: value\"><script data-this=\"{&quot;valueId&quot;:&quot;anonb8ec485678c3f6e2e4792995820d6ebf&quot;}\" type=\"text/x-scoped-javascript\">/*<![CDATA[*/\nreq(\n['observable', 'knockout'],\nfunction (O, ko) {\n  ko.applyBindings({\n      value: O.makeObservable(valueId)\n    },\n    this\n  );\n});\n        /*]]>*/</script></p></span>\n        <div>\n        </div>\n      </div></div>\n              </div></div>\n        </div>\n      </div></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 8
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "F179FB8856AB410680F5EFE9C71DD205"
+    },
+    "cell_type" : "markdown",
+    "source" : "Just a check."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "61382A2C9CE649F381CABF10510FC217"
+    },
+    "cell_type" : "code",
+    "source" : "println(winFiles.first)\n",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\Aaron_Eckhart_0001.jpg\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 9
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "F12B709B0213491687790A61E950507E"
+    },
+    "cell_type" : "markdown",
+    "source" : "The above seems ok, so I want to display an image.val img = new ImageIcon(path)"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "C6DECFA281B24DDA87F3E053B61D28E5"
+    },
+    "cell_type" : "code",
+    "source" : "val path = winFiles.first",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "path: String = E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\Aaron_Eckhart_0001.jpg\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 10
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "7C48ACE36783410186690F50EA5D1C29"
+    },
+    "cell_type" : "code",
+    "source" : "val img = new ImageIcon(path)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "img: javax.swing.ImageIcon = E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\*\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 14
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "DEEBF007633E486695D56A88188CA0BC"
+    },
+    "cell_type" : "markdown",
+    "source" : "For purposes of displaying an image."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "A6FA6A4B9CDF4A2F8B912303AB04CE2C"
+    },
+    "cell_type" : "code",
+    "source" : "import  scala.swing._\nimport  javax.swing._",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import scala.swing._\r\nimport javax.swing._\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 11
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "DE7AFC0A710F4A2684B5EDFCD8B4EAF4"
+    },
+    "cell_type" : "code",
+    "source" : "val img = new ImageIcon(path)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "img: javax.swing.ImageIcon = E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\*\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 12
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "5930EE659D7645EA8F2C775A19B7640F"
+    },
+    "cell_type" : "markdown",
+    "source" : "ImageIcon is from javax.swing;  Dialog is from scala.swing"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "6ECAF0648FA648F2BBE5B65106ED8D72"
+    },
+    "cell_type" : "code",
+    "source" : "Dialog.showMessage(message = null, icon = img)",
+    "outputs" : [ {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 15
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "13D9BA72A56D40C1A8B1550DA2A43359"
+    },
+    "cell_type" : "markdown",
+    "source" : "The following is to make a BufferedImage object given a file pathname.\nThere are probably many other ways."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "2DF50B85E8C54B41BFF4CA7F6007FE99"
+    },
+    "cell_type" : "code",
+    "source" : "import java.awt.image.BufferedImage\n\ndef loadImageFromFile(path: String): BufferedImage = {\n   import javax.imageio.ImageIO\n   import java.io.File\n   ImageIO.read(new File(path))\n}",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import java.awt.image.BufferedImage\r\nloadImageFromFile: (path: String)java.awt.image.BufferedImage\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 14
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "EDECE60AA67F4A74AB2EFDA81C2A39A9"
+    },
+    "cell_type" : "code",
+    "source" : "val fl = winFiles.foreach(f => println(f))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "E:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\Aaron_Eckhart_0001.jpg\nE:\\bigdata\\module_17_b_lfw_images\\lfw\\Aaron_Eckhart\\Aaron_Guiel_0001.jpg\nfl: Unit = ()\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 33
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "2DF50B85E8C54B41BFF4CA7F6007FE99"
+    },
+    "cell_type" : "code",
+    "source" : "import java.awt.image.BufferedImage\n\ndef loadImageFromFile(path:String): BufferedImage = {\n   import javax.imageio.ImageIO\n   import java.io.File\n   ImageIO.read(new File(path))\n}",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import java.awt.image.BufferedImage\r\nloadImageFromFile: (path: String)java.awt.image.BufferedImage\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 38
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : true,
+      "collapsed" : false,
+      "id" : "26710AEFF6FF4AC4843CA061F0315C61"
+    },
+    "cell_type" : "code",
+    "source" : "val str = winFiles.map (f => println(f))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "str: org.apache.spark.rdd.RDD[Unit] = MapPartitionsRDD[11] at map at <console>:68\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 27
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "5114DB3070B9429D833460D1917BABE2"
+    },
+    "cell_type" : "markdown",
+    "source" : "This is to load the first image as BufferedImage"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "D242B57D17264D4988DCC3BE6A9F1F8B"
+    },
+    "cell_type" : "code",
+    "source" : "val img_ld = winFiles.map(fl => loadImageFromFile(fl))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "img_ld: org.apache.spark.rdd.RDD[java.awt.image.BufferedImage] = MapPartitionsRDD[4] at map at <console>:70\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 16
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "CA9151F6C5D2471BB506774D4168ED5A"
+    },
+    "cell_type" : "code",
+    "source" : "img_ld.count()",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "res42: Long = 2\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "2"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 27
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "CF6AFB5ED97146159599068EF5981E6F"
+    },
+    "cell_type" : "markdown",
+    "source" : "The following is to transform a color BufferedImage into a grayscale BufferedImage."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "B57814AE1F9246878E22396C8E4268A9"
+    },
+    "cell_type" : "code",
+    "source" : "def processImage(image: BufferedImage, width: Int, height: Int): BufferedImage =   {\n   val bwImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)\n   val g = bwImage.getGraphics()\n   g.drawImage(image, 0, 0, width, height, null)\n   g.dispose()\n   bwImage\n}",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "processImage: (image: java.awt.image.BufferedImage, width: Int, height: Int)java.awt.image.BufferedImage\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 17
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true,
+      "id" : "19E13174FA2C4382920AFFEEB1B0DDDC"
+    },
+    "cell_type" : "code",
+    "source" : "",
+    "outputs" : [ ]
+  }, {
+    "metadata" : {
+      "id" : "FD80AE4553504852B72C67B93668C2FA"
+    },
+    "cell_type" : "markdown",
+    "source" : "For check, produce a grayscale image from that first image."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "45894733230E46E3852812B8B77E6494"
+    },
+    "cell_type" : "code",
+    "source" : "val grayAeImage = img_ld.map(f => processImage(f, 100, 100))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "grayAeImage: org.apache.spark.rdd.RDD[java.awt.image.BufferedImage] = MapPartitionsRDD[5] at map at <console>:74\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 28
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "D228DB7CBA7C49E08E5348C69AC8EC84"
+    },
+    "cell_type" : "markdown",
+    "source" : "As check, display the grayscale image, as above."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "C083FED609A14A1989E7EC1F2F29FB81"
+    },
+    "cell_type" : "code",
+    "source" : "grayAeImage.count()",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "res45: Long = 2\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "2"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 29
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "EA0B41CBB73749D28C9B9F6AE6BFBD1F"
+    },
+    "cell_type" : "code",
+    "source" : "Dialog.showMessage(message = null, icon = grayImageIcon)",
+    "outputs" : [ {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 23
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "8B4DE4FC415647E1801DF26F6476CDBB"
+    },
+    "cell_type" : "markdown",
+    "source" : "The following gets the pixel values of a  (grayscale) image into an Array of doubles."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "71FD4F2B91F54ED3A631922565CB6282"
+    },
+    "cell_type" : "code",
+    "source" : "def getPixelsFromImage(image: BufferedImage): Array[Double] = {\n   val width = image.getWidth\n   val height = image.getHeight\n   val pixels = Array.ofDim[Double](width * height)\n   image.getData.getPixels(0, 0, width, height, pixels)\n}",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "getPixelsFromImage: (image: java.awt.image.BufferedImage)Array[Double]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 30
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "D8840A15BFAC44518ACB6E2431E4BCE8"
+    },
+    "cell_type" : "markdown",
+    "source" : "The following is a single function for the 3 steps above."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "EA6EA2EAD66741BC81A349FE325DB98F"
+    },
+    "cell_type" : "code",
+    "source" : "def extractPixels(path: String, width: Int, height: Int): Array[Double] = {\n   val raw = loadImageFromFile(path)\n   val processed = processImage(raw, width, height)\n   getPixelsFromImage(processed)\n}",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "extractPixels: (path: String, width: Int, height: Int)Array[Double]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 31
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "F78EC459440F4DC4A1138A64CE968277"
+    },
+    "cell_type" : "markdown",
+    "source" : "Now, use the above function to make an RDD[Array[Double]].  50-by-50 is already of dimension 2500."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "0D7600376E7947BB87EE76651EC8E10A"
+    },
+    "cell_type" : "code",
+    "source" : "val pixels = files.map(f => extractPixels(f, 50, 50))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "pixels: org.apache.spark.rdd.RDD[Array[Double]] = MapPartitionsRDD[6] at map at <console>:76\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 32
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "3A630B7AC56541F091C7F330FE4C333E"
+    },
+    "cell_type" : "markdown",
+    "source" : "Just a sanity check."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "032A2D4A28DB46B58A71E53FFD1C98EB"
+    },
+    "cell_type" : "code",
+    "source" : "println(pixels.take(10).map(_.take(10).mkString(\"\", \",\", \", ...\")).mkString(\"\\n\"))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "1.0,1.0,1.0,1.0,1.0,1.0,2.0,1.0,1.0,1.0, ...\n247.0,173.0,159.0,144.0,139.0,155.0,32.0,7.0,4.0,5.0, ...\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 33
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "66DD3B999DA4481C8C3C3192E2A4E508"
+    },
+    "cell_type" : "markdown",
+    "source" : "See your Sparm MLlib apis."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "ECDD69CC893A436587B1801682CE0402"
+    },
+    "cell_type" : "code",
+    "source" : "import org.apache.spark.mllib.linalg.Vectors",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import org.apache.spark.mllib.linalg.Vectors\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 34
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "2C8AA255D81E457DA7F439A983E00F71"
+    },
+    "cell_type" : "markdown",
+    "source" : "For MLlib, make a dense vector for each image's array of pixel values.\nIt cannot be a sparse vector, since each pixel position has a probbably\na non-zero value."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "3C0D00B385724DE9826E56A3C97104FF"
+    },
+    "cell_type" : "code",
+    "source" : "val vectors = pixels.map(p => Vectors.dense(p))\nvectors.setName(\"image-vectors\")\nvectors.cache",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "vectors: org.apache.spark.rdd.RDD[org.apache.spark.mllib.linalg.Vector] = image-vectors MapPartitionsRDD[7] at map at <console>:79\r\nres53: vectors.type = image-vectors MapPartitionsRDD[7] at map at <console>:79\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "image-vectors MapPartitionsRDD[7] at map at &lt;console&gt;:79"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 35
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "94032CC76F03449F8E8021DD19F9CC55"
+    },
+    "cell_type" : "markdown",
+    "source" : "Refer to your MLlib apis."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "840164AD5C0F43508155ED194629ACC1"
+    },
+    "cell_type" : "code",
+    "source" : "import org.apache.spark.mllib.linalg.Matrix\nimport org.apache.spark.mllib.linalg.distributed.RowMatrix\nimport org.apache.spark.mllib.feature.StandardScaler",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import org.apache.spark.mllib.linalg.Matrix\r\nimport org.apache.spark.mllib.linalg.distributed.RowMatrix\r\nimport org.apache.spark.mllib.feature.StandardScaler\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 36
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "5FCC8C2DDC07495186CB212CF08523DF"
+    },
+    "cell_type" : "markdown",
+    "source" : "An example of a normalization (around the mean, but not using standard deviation)."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "F4DDFAFF16B6409B87E6FB4A710513FF"
+    },
+    "cell_type" : "code",
+    "source" : "val scaler = new StandardScaler(withMean = true, withStd = false).fit(vectors)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "scaler: org.apache.spark.mllib.feature.StandardScalerModel = org.apache.spark.mllib.feature.StandardScalerModel@1f0f4683\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 37
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "C57F87C0FAFD4237B6F663767998F347"
+    },
+    "cell_type" : "markdown",
+    "source" : "Make the scaled feature vectors now."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "100BBAC02A5F429BBA3CAEA9E65F3A1F"
+    },
+    "cell_type" : "code",
+    "source" : "val scaledVectors = vectors.map(v => scaler.transform(v))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "scaledVectors: org.apache.spark.rdd.RDD[org.apache.spark.mllib.linalg.Vector] = MapPartitionsRDD[9] at map at <console>:88\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 39
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "D9FFE64E63754ACB889495A1083F76AF"
+    },
+    "cell_type" : "markdown",
+    "source" : "Refer to your MLlib apis."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "9EDB1F53B852456F8F83A2B52CC1A805"
+    },
+    "cell_type" : "code",
+    "source" : "import org.apache.spark.mllib.linalg.Matrix\nimport org.apache.spark.mllib.linalg.distributed.RowMatrix",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import org.apache.spark.mllib.linalg.Matrix\r\nimport org.apache.spark.mllib.linalg.distributed.RowMatrix\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 38
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "19EACF2650E541A387F4BC8A5943DFA8"
+    },
+    "cell_type" : "markdown",
+    "source" : "Make a distributed matrix from the normalized feature vectors. This is a 1054-by-2500 matrix."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "7A3569ADF02C474B8C6044864EBD5B1E"
+    },
+    "cell_type" : "code",
+    "source" : "val matrix = new RowMatrix(scaledVectors)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "matrix: org.apache.spark.mllib.linalg.distributed.RowMatrix = org.apache.spark.mllib.linalg.distributed.RowMatrix@2303a167\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 41
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "B0C22586978C453BBEA27413E8ADFDD4"
+    },
+    "cell_type" : "markdown",
+    "source" : "Refer to your MLlib documentation. Many things may be done once you\nhave such a matrix.\nThe following is only a sample."
+  }, {
+    "metadata" : {
+      "id" : "F34DBB535EDA44B4BD6E9B6B1530FCC6"
+    },
+    "cell_type" : "markdown",
+    "source" : "Compute principal components. Here K=10  most important eigenvectors (corresponding\nto K=10 largest eigenvalues)."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "A5D49B5885224B0A80FD362560F261AA"
+    },
+    "cell_type" : "code",
+    "source" : "val K = 10\nval pc = matrix.computePrincipalComponents(K)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "K: Int = 10\r\npc: org.apache.spark.mllib.linalg.Matrix =\r\n-0.06032842600303967    0.007452919137787552    ... (10 total)\r\n-0.04218085070131269    -0.06207432963500581    ...\r\n-0.03874752564422903    0.10894684172734723     ...\r\n-0.03506896308306823    0.06830693963778649     ...\r\n-0.033842775562681046   -0.022806915769961928   ...\r\n-0.037766575627919546   -0.05489640521185702    ...\r\n-0.007357125122321957   -0.056953129651208745   ...\r\n-0.0014714250244643894  -0.022184172737611405   ...\r\n-7.357125122321947E-4   -0.044739847621736946   ...\r\n-9.80950016309599E-4    -0.04392692902184668    ...\r\n-0.0012261875203869997  -0.17222485899779114    ...\r\n-9.80950016309599E-4    0.2565372897937403      ...\r\n-7.357125122321947E-4   -0.6659049954660432     ...\r\n-2.4523750407739976E-4  0.36117061588511..."
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 42
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "FE82F3174C3B434BA7FA25CCA3E5922E"
+    },
+    "cell_type" : "markdown",
+    "source" : "Just a check.  Remember  2500 = 50*50  =  the size of each vector (each image)."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "D153B6FAC5A64F8C81F58B1E73C485A6"
+    },
+    "cell_type" : "code",
+    "source" : "val rows = pc.numRows\nval cols = pc.numCols\nprintln(rows, cols)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "(2500,10)\nrows: Int = 2500\ncols: Int = 10\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 43
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "0FC4B6CC81334E33912099BFFE3F0B08"
+    },
+    "cell_type" : "markdown",
+    "source" : "Now, do a dimensionality reduction by projecting the images\nonto the space of these principal components.\n\nYou should have 1054 images of course, but each is now represented as a 10-dimensional vector\ninstead of a 2500-dimensional vector."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "C40EAC947755442B9F2D5D2101C870E7"
+    },
+    "cell_type" : "code",
+    "source" : "val projected = matrix.multiply(pc)\nprintln(projected.numRows, projected.numCols)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "(2,10)\nprojected: org.apache.spark.mllib.linalg.distributed.RowMatrix = org.apache.spark.mllib.linalg.distributed.RowMatrix@69bd02de\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 44
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "9318C44297434B8580460E3B6DCCBD1F"
+    },
+    "cell_type" : "markdown",
+    "source" : "Just a check."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "B13249DE397A4306807BB8BBE7DCE4AF"
+    },
+    "cell_type" : "code",
+    "source" : "println(projected.rows.take(5).mkString(\"\\n\"))",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "[2038.8398661984174,2.5568991368629668E-12,-3.965383577053672E-12,-6.955547249276606E-13,6.2230914865679665E-12,1.0620615498169172E-11,-1.0342837697407958E-11,-7.749356711883593E-13,3.662736780540854E-12,5.231259869731275E-12]\n[-2038.8398661984174,-2.5568991368629668E-12,3.965383577053672E-12,6.955547249276606E-13,-6.2230914865679665E-12,-1.0620615498169172E-11,1.0342837697407958E-11,7.749356711883593E-13,-3.662736780540854E-12,-5.231259869731275E-12]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 45
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "92858DD210614090842287C78344A56B"
+    },
+    "cell_type" : "markdown",
+    "source" : "Another example using the matrix.\nJust an example of computing SVD decomposition of the 1054-by-2500 matrix above."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "CCB5C174B45B481696ABCAEC2DB81204"
+    },
+    "cell_type" : "code",
+    "source" : "val svd = matrix.computeSVD(10, computeU = true)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "svd: org.apache.spark.mllib.linalg.SingularValueDecomposition[org.apache.spark.mllib.linalg.distributed.RowMatrix,org.apache.spark.mllib.linalg.Matrix] =\r\nSingularValueDecomposition(org.apache.spark.mllib.linalg.distributed.RowMatrix@a27f99,[2883.3549902847512,3.763212027295118E-6],0.06032842600304029      -0.01539385145723142\r\n0.042180850701312805     0.023139643482925576\r\n0.03874752564422909      0.0198583243559996\r\n0.03506896308306815      -0.029003274261230373\r\n0.03384277556268111      -0.005251898964804692\r\n0.037766575627919505     -0.021312919611741667\r\n0.007357125122321982     0.024409655123412994\r\n0.0014714250244643973    -0.005587134732399371\r\n7.357125122321994E-4     0.007469466597826163\r\n9.809500163095973E-4     -0.005785497851490089\r\n0.0012261875203869962    0.01514092173145..."
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 46
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "D6321423F071415583699ED34930AE90"
+    },
+    "cell_type" : "markdown",
+    "source" : "Just a check."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "7E34F0DFB91245A8860A66CE3F78905E"
+    },
+    "cell_type" : "code",
+    "source" : "println(s\"U dimension: (${svd.U.numRows}, ${svd.U.numCols})\")\nprintln(s\"S dimension: (${svd.s.size}, )\")\nprintln(s\"V dimension: (${svd.V.numRows}, ${svd.V.numCols})\")",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "U dimension: (2, 2)\nS dimension: (2, )\nV dimension: (2500, 2)\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 47
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "A4AF9C37C99640B382865ED5AC4DC3C6"
+    },
+    "cell_type" : "markdown",
+    "source" : "Recall the type of projected."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "2729A3C38C034F2E87141C28127D998B"
+    },
+    "cell_type" : "code",
+    "source" : "projected",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "res71: org.apache.spark.mllib.linalg.distributed.RowMatrix = org.apache.spark.mllib.linalg.distributed.RowMatrix@69bd02de\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "org.apache.spark.mllib.linalg.distributed.RowMatrix@69bd02de"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 48
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true,
+      "id" : "FD53FAB8BACB4AF886A7D9EFFE6D76E2"
+    },
+    "cell_type" : "markdown",
+    "source" : "Make an RDD out of projected"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "19ACCC1DB2AD485F9A87F9A31BDEBCBE"
+    },
+    "cell_type" : "code",
+    "source" : "val sqlContext = new org.apache.spark.sql.SQLContext(sc)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@af6db66\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 49
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "88AF3092E755460880897C907961D898"
+    },
+    "cell_type" : "code",
+    "source" : "import sqlContext.implicits._",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import sqlContext.implicits._\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 50
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "239F607FF9C14A3990EADEE27D1A148F"
+    },
+    "cell_type" : "code",
+    "source" : "val projectedRDD  =  projected.rows",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "projectedRDD: org.apache.spark.rdd.RDD[org.apache.spark.mllib.linalg.Vector] = MapPartitionsRDD[12] at mapPartitions at RowMatrix.scala:429\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 51
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true,
+      "id" : "94C156ED8CED4EC0B3ED07199F529701"
+    },
+    "cell_type" : "code",
+    "source" : "projectedRDD",
+    "outputs" : [ ]
+  }, {
+    "metadata" : {
+      "id" : "FD062400680B471E97EE59BCD011D2A5"
+    },
+    "cell_type" : "markdown",
+    "source" : "Make a dataframe from the projected vectors.\nThis is tricky. To make a DF from an RDD[T], the type T must be a product type.\nSo, projectedRDD cannot be transformed to a DF. I artificially make a pair (1,r)\nout of each row r of projectedRDD. Then I can make a DF out of it!!!!"
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "111F0803AA4C4BA6B62467F4CD3CE4D8"
+    },
+    "cell_type" : "code",
+    "source" : "val projectedDF =  projectedRDD.map( r =>  Tuple2(1,r) ).toDF(\"one\",\"features\")",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "projectedDF: org.apache.spark.sql.DataFrame = [one: int, features: vector]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 52
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true,
+      "id" : "343CE32CDEDE463DB1D63608D6B9A4A9"
+    },
+    "cell_type" : "code",
+    "source" : "Once you have your DF, you can use learning models of Spark ML.\nHere the KMeans clustering model.\nRefer to your Spark ML documentation.",
+    "outputs" : [ ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "FAE4323749044A0E80DDD1599894F4B0"
+    },
+    "cell_type" : "code",
+    "source" : "import org.apache.spark.ml.clustering.KMeans",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import org.apache.spark.ml.clustering.KMeans\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 53
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "453DDB832D79424DBD5AEB1F8AEC6AFF"
+    },
+    "cell_type" : "markdown",
+    "source" : "Make the learner."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "C483AA7C91134C64B34CB7663921FCAA"
+    },
+    "cell_type" : "code",
+    "source" : "val km =  new KMeans()\n            .setK(10)\n            .setFeaturesCol(\"features\")\n            .setPredictionCol(\"prediction\")",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "km: org.apache.spark.ml.clustering.KMeans = kmeans_a08fcdbf0adf\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 54
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "C7566165CB55474980FF929E5AAE3CEA"
+    },
+    "cell_type" : "markdown",
+    "source" : "Then, actually train the learner on the dataset, here projectedDF above."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "4D112F9A08BC4D00B26158AF4BDD621F"
+    },
+    "cell_type" : "code",
+    "source" : "val kmModel =  km.fit(projectedDF)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "kmModel: org.apache.spark.ml.clustering.KMeansModel = kmeans_a08fcdbf0adf\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 55
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "D90357E7944848289783BE01A2C37E6F"
+    },
+    "cell_type" : "markdown",
+    "source" : "Sample result from the fitted model."
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false,
+      "id" : "6472AFC8E1B142C2BF4F3154777B21C7"
+    },
+    "cell_type" : "code",
+    "source" : "kmModel.clusterCenters.foreach(println)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "[-2038.8398661984174,-2.5568991368629668E-12,3.965383577053672E-12,6.955547249276606E-13,-6.2230914865679665E-12,-1.0620615498169172E-11,1.0342837697407958E-11,7.749356711883593E-13,-3.662736780540854E-12,-5.231259869731275E-12]\n[2038.8398661984174,2.5568991368629668E-12,-3.965383577053672E-12,-6.955547249276606E-13,6.2230914865679665E-12,1.0620615498169172E-11,-1.0342837697407958E-11,-7.749356711883593E-13,3.662736780540854E-12,5.231259869731275E-12]\n[-2038.8398661984174,-2.5568991368629668E-12,3.965383577053672E-12,6.955547249276606E-13,-6.2230914865679665E-12,-1.0620615498169172E-11,1.0342837697407958E-11,7.749356711883593E-13,-3.662736780540854E-12,-5.231259869731275E-12]\n[2038.8398661984174,2.5568991368629668E-12,-3.965383577053672E-12,-6.955547249276606E-13,6.2230914865679665E-12,1.0620615498169172E-11,-1.0342837697407958E-11,-7.749356711883593E-13,3.662736780540854E-12,5.231259869731275E-12]\n[-2038.8398661984174,-2.5568991368629668E-12,3.965383577053672E-12,6.955547249276606E-13,-6.2230914865679665E-12,-1.0620615498169172E-11,1.0342837697407958E-11,7.749356711883593E-13,-3.662736780540854E-12,-5.231259869731275E-12]\n[-2038.8398661984174,-2.5568991368629668E-12,3.965383577053672E-12,6.955547249276606E-13,-6.2230914865679665E-12,-1.0620615498169172E-11,1.0342837697407958E-11,7.749356711883593E-13,-3.662736780540854E-12,-5.231259869731275E-12]\n[2038.8398661984174,2.5568991368629668E-12,-3.965383577053672E-12,-6.955547249276606E-13,6.2230914865679665E-12,1.0620615498169172E-11,-1.0342837697407958E-11,-7.749356711883593E-13,3.662736780540854E-12,5.231259869731275E-12]\n[2038.8398661984174,2.5568991368629668E-12,-3.965383577053672E-12,-6.955547249276606E-13,6.2230914865679665E-12,1.0620615498169172E-11,-1.0342837697407958E-11,-7.749356711883593E-13,3.662736780540854E-12,5.231259869731275E-12]\n[-2038.8398661984174,-2.5568991368629668E-12,3.965383577053672E-12,6.955547249276606E-13,-6.2230914865679665E-12,-1.0620615498169172E-11,1.0342837697407958E-11,7.749356711883593E-13,-3.662736780540854E-12,-5.231259869731275E-12]\n[2038.8398661984174,2.5568991368629668E-12,-3.965383577053672E-12,-6.955547249276606E-13,6.2230914865679665E-12,1.0620615498169172E-11,-1.0342837697407958E-11,-7.749356711883593E-13,3.662736780540854E-12,5.231259869731275E-12]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : ""
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 56
+    } ]
+  }, {
+    "metadata" : {
+      "id" : "DD0607C057C24230830495650224B041"
+    },
+    "cell_type" : "markdown",
+    "source" : "The above is only a sample of the possibilities."
+  } ],
+  "nbformat" : 4
+}
